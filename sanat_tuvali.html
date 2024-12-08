@@ -6,7 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Paint Uygulaması</title>
   <style>
-    /* Sayfa Tasarımı */
     * {
       margin: 0;
       padding: 0;
@@ -22,7 +21,6 @@
       background: linear-gradient(135deg, #f0f4f8, #d9e2ec);
     }
 
-    /* Araç Çubuğu */
     .toolbar {
       display: flex;
       justify-content: flex-end;
@@ -70,7 +68,6 @@
       background-color: #c0392b;
     }
 
-    /* Tuval Alanı */
     #canvas-container {
       display: flex;
       justify-content: center;
@@ -91,7 +88,6 @@
 </head>
 
 <body>
-  <!-- Araç Çubuğu -->
   <div class="toolbar">
     <label for="color">Renk:</label>
     <input type="color" id="color" value="#000000">
@@ -101,7 +97,6 @@
     <button id="save">Kaydet</button>
   </div>
 
-  <!-- Tuval Alanı -->
   <div id="canvas-container">
     <canvas id="paintCanvas" width="800" height="600"></canvas>
   </div>
@@ -124,7 +119,6 @@
     let historyStack = [];
     let redoStack = [];
 
-    // Canvas Durumunu Kaydet
     function saveCanvasState() {
       historyStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
     }
