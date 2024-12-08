@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paint Uygulaması</title>
+  <style>
+    /* Sayfa Tasarımı */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100vh;
+      background: linear-gradient(135deg, #f0f4f8, #d9e2ec);
+    }
+
+    /* Araç Çubuğu */
+    .toolbar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      padding: 10px 20px;
+      background: #2c3e50;
+      color: #ecf0f1;
+      border-bottom: 2px solid #34495e;
+      font-size: 16px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      gap: 10px;
+    }
+
+    .toolbar label {
+      margin-right: 8px;
+    }
+
+    .toolbar input[type="color"],
+    .toolbar button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .toolbar input[type="color"] {
+      background-color: #ecf0f1;
+    }
+
+    .toolbar button {
+      background-color: #3498db;
+      color: #fff;
+    }
+
+    .toolbar button:hover {
+      background-color: #2980b9;
+    }
+
+    .toolbar button#clear {
+      background-color: #e74c3c;
+    }
+
+    .toolbar button#clear:hover {
+      background-color: #c0392b;
+    }
+
+    /* Tuval Alanı */
+    #canvas-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-grow: 1;
+      padding: 10px;
+    }
+
+    canvas {
+      border: 4px solid #34495e;
+      max-width: 100%;
+      height: auto;
+      touch-action: none;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Araç Çubuğu -->
+  <div class="toolbar">
+    <label for="color">Renk:</label>
+    <input type="color" id="color" value="#000000">
+    <button id="clear">Temizle</button>
+    <button id="undo">Geri</button>
+    <button id="redo">İleri</button>
+    <button id="save">Kaydet</button>
+  </div>
+
+  <!-- Tuval Alanı -->
+  <div id="canvas-container">
+    <canvas id="paintCanvas" width="800" height="600"></canvas>
+  </div>
+
+  <footer>&copy; 2024 Mustafa Koca - Paint Uygulaması</footer>
+
+  <script>
+    const canvas = document.getElementById('paintCanvas');
+    const ctx = canvas.getContext('2d');
+    const clearButton = document.getElementById('clear');
+    const saveButton = document.getElementById('save');
+    const colorPicker = document.getElementById('color');
+    const undoButton = document.getElementById('undo');
+    const redoButton = document.getElementById('redo');
+
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    let historyStack = [];
+    let redoStack = [];
+
+    // Canvas Durumunu Kaydet
+    function saveCanvasState() {
+      historyStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+    }
+
+    function restoreCanvasState(state) {
+      ctx.putImageData(state, 0, 0);
+    }
+
+    function startDrawing(event) {
+      isDrawing = true;
+      const { x, y } = getCanvasCoordinates(event);
+      lastX = x;
+      lastY = y;
+      saveCanvasState();
+    }
+
+    function draw(event) {
+      if (!isDrawing) return;
+
+      const { x, y } = getCanvasCoordinates(event);
+
+      ctx.strokeStyle = colorPicker.value;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+
+      lastX = x;
+      lastY = y;
+    }
+
+    function stopDrawing() {
+      isDrawing = false;
+      ctx.beginPath();
+      redoStack = [];
+    }
+
+    function clearCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      historyStack = [];
+    }
+
+    function undo() {
+      if (historyStack.length > 0) {
+        const lastState = historyStack.pop();
+        redoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+        restoreCanvasState(lastState);
+      }
+    }
+
+    function redo() {
+      if (redoStack.length > 0) {
+        const nextState = redoStack.pop();
+        historyStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+        restoreCanvasState(nextState);
+      }
+    }
+
+    function getCanvasCoordinates(event) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+
+      const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+      const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+
+      return {
+        x: (clientX - rect.left) * scaleX,
+        y: (clientY - rect.top) * scaleY,
+      };
+    }
+
+    clearButton.addEventListener('click', clearCanvas);
+    undoButton.addEventListener('click', undo);
+    redoButton.addEventListener('click', redo);
+
+    // Mobil ve masaüstü dokunma olayları
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
+
+    canvas.addEventListener('touchstart', startDrawing);
+    canvas.addEventListener('touchmove', draw);
+    canvas.addEventListener('touchend', stopDrawing);
+  </script>
+</body>
+
+</html>
